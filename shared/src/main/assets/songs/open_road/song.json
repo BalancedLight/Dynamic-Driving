@@ -1,0 +1,121 @@
+{
+  "songId": "open_road_demo",
+  "displayName": "Open Road",
+  "artist": "Dynamic Driving Demo",
+  "album": "Getting Started",
+  "transportStemId": "pad",
+  "loopRegion": {
+    "startMs": 0,
+    "endMs": 9600,
+    "playTailOverLoop": true,
+    "loopStartsSong": true
+  },
+  "muffle": {
+    "releaseMph": 12.0,
+    "wetMix": 0.8,
+    "cutoffHz": 320.0,
+    "fadeMs": 1200
+  },
+  "stems": [
+    {
+      "stemId": "pad",
+      "displayName": "Pad",
+      "assetPath": "pad.wav",
+      "playTailOverLoop": true,
+      "gain": 0.9,
+      "fadeInMs": 1800,
+      "fadeOutMs": 2400,
+      "rule": {
+        "type": "base"
+      },
+      "events": [
+        {
+          "eventId": "idle_wash",
+          "displayName": "Idle wash",
+          "condition": {
+            "metric": "mph",
+            "operator": "<",
+            "value": 10.0
+          },
+          "modifiers": [
+            {
+              "type": "reverb",
+              "wetMix": 0.38,
+              "feedback": 0.5,
+              "damping": 0.4,
+              "delayMs": 160.0,
+              "fadeMs": 2000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stemId": "pulse",
+      "displayName": "Pulse",
+      "assetPath": "pulse.wav",
+      "playTailOverLoop": false,
+      "gain": 0.85,
+      "fadeInMs": 1400,
+      "fadeOutMs": 1600,
+      "rule": {
+        "type": "base",
+        "minMph": 8.0
+      }
+    },
+    {
+      "stemId": "drive",
+      "displayName": "Drive",
+      "assetPath": "drive.wav",
+      "playTailOverLoop": false,
+      "gain": 0.8,
+      "fadeInMs": 1600,
+      "fadeOutMs": 1800,
+      "rule": {
+        "type": "base",
+        "minMph": 30.0
+      },
+      "events": [
+        {
+          "eventId": "highway_lift",
+          "displayName": "Highway lift",
+          "condition": {
+            "all": [
+              {
+                "metric": "mph",
+                "operator": ">=",
+                "value": 55.0
+              }
+            ]
+          },
+          "modifiers": [
+            {
+              "type": "gainMultiplier",
+              "multiplier": 1.0,
+              "fadeMs": 1500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stemId": "sparkle",
+      "displayName": "Sparkle",
+      "assetPath": "sparkle.wav",
+      "playTailOverLoop": true,
+      "gain": 0.7,
+      "fadeInMs": 900,
+      "fadeOutMs": 1600,
+      "rule": {
+        "type": "overlay",
+        "minMph": 20.0,
+        "groupId": "highlights",
+        "groupName": "Highlights",
+        "durationMs": 19200,
+        "cooldownMinMs": 14000,
+        "cooldownMaxMs": 28000,
+        "weight": 1
+      }
+    }
+  ]
+}

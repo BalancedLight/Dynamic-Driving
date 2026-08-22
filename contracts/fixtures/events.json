@@ -1,0 +1,54 @@
+{
+  "songId": "fixture_events",
+  "displayName": "Events Fixture",
+  "artist": "Contract Test Artist",
+  "transportStemId": "core",
+  "loopRegion": {
+    "startMs": 500,
+    "endMs": 12500,
+    "playTailOverLoop": false,
+    "loopStartsSong": true
+  },
+  "stems": [
+    {
+      "stemId": "core",
+      "displayName": "Core",
+      "assetPath": "core.wav",
+      "rule": { "type": "base", "minMph": 5.0 },
+      "events": [
+        {
+          "eventId": "city_duck",
+          "displayName": "City duck",
+          "condition": {
+            "all": [
+              { "metric": "mph", "operator": ">", "value": 5.0 },
+              { "metric": "mph", "operator": "<", "value": 35.0 }
+            ]
+          },
+          "modifiers": [
+            { "type": "gainMultiplier", "multiplier": 1.75, "fadeMs": 1200 },
+            {
+              "type": "reverb",
+              "wetMix": 0.4,
+              "feedback": 0.6,
+              "damping": 0.3,
+              "delayMs": 180.0,
+              "fadeMs": 1500
+            }
+          ]
+        },
+        {
+          "condition": {
+            "any": [
+              { "operator": "<=", "value": 2.0 },
+              { "operator": ">=", "value": 70.0 }
+            ]
+          },
+          "modifiers": [
+            { "type": "gainMultiplier", "multiplier": 0.25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

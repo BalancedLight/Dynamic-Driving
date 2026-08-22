@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dynamic Driving</string>
+
+    <!-- AAOS reads the vehicle's own speed, so this permission only exists in this build. -->
+    <string name="settings_permission_car_speed">Car speed</string>
+    <string name="settings_permission_car_speed_body">Lets the app read the vehicle\'s own speed instead of GPS.</string>
+</resources>

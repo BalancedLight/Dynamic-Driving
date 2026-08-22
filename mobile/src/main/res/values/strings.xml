@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dynamic Driving</string>
+
+    <!-- Only the phone build reads GPS, so this permission copy lives here. -->
+    <string name="settings_permission_location">Location</string>
+    <string name="settings_permission_location_body">Needed only to read your speed from phone GPS while playback is running. Dynamic Driving never asks for background location.</string>
+</resources>

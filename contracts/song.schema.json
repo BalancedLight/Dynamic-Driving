@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BalancedLight/DynamicDriving/contracts/song.schema.json",
+  "title": "Dynamic Driving song manifest",
+  "description": "Schema for the song.json manifest read by the Android app and the Windows editor. Unknown properties are permitted and are preserved verbatim by the editor.",
+  "type": "object",
+  "required": ["songId", "displayName", "transportStemId", "loopRegion", "stems"],
+  "properties": {
+    "songId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable identifier. Also the media ID published to MediaSession."
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Song title shown in the app and published as MediaMetadata title."
+    },
+    "artist": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional. Published as MediaMetadata artist. Omit it rather than inventing one; the app shows 'Unknown artist' in its own UI but publishes nothing."
+    },
+    "album": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional. Published as MediaMetadata album title. Omit when unknown."
+    },
+    "transportStemId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Must match one of stems[].stemId. Drives the transport timeline."
+    },
+    "loopRegion": { "$ref": "#/$defs/loopRegion" },
+    "muffle": { "$ref": "#/$defs/muffle" },
+    "stems": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/stem" }
+    }
+  },
+  "$defs": {
+    "loopRegion": {
+      "type": "object",
+      "required": ["startMs", "endMs"],
+      "properties": {
+        "startMs": { "type": "integer", "minimum": 0 },
+        "endMs": { "type": "integer", "minimum": 1 },
+        "playTailOverLoop": { "type": "boolean", "default": false },
+        "loopStartsSong": { "type": "boolean", "default": true }
+      }
+    },
+    "muffle": {
+      "type": "object",
+      "properties": {
+        "releaseMph": { "type": "number", "minimum": 0, "default": 1.0 },
+        "wetMix": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.85 },
+        "cutoffHz": { "type": "number", "minimum": 20, "maximum": 18000, "default": 300 },
+        "fadeMs": { "type": "integer", "minimum": 1, "default": 1200 }
+      }
+    },
+    "stem": {
+      "type": "object",
+      "required": ["stemId", "displayName", "assetPath", "rule"],
+      "properties": {
+        "stemId": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "assetPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path relative to song.json. Forward slashes; no '.' or '..' segments."
+        },
+        "playTailOverLoop": { "type": "boolean", "default": true },
+        "gain": { "type": "number", "minimum": 0, "default": 1.0 },
+        "fadeInMs": { "type": "integer", "minimum": 0, "default": 1500 },
+        "fadeOutMs": { "type": "integer", "minimum": 0, "default": 1500 },
+        "rule": { "$ref": "#/$defs/rule" },
+        "events": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/event" },
+          "default": []
+        }
+      }
+    },
+    "rule": {
+      "oneOf": [
+        { "$ref": "#/$defs/baseRule" },
+        { "$ref": "#/$defs/overlayRule" }
+      ]
+    },
+    "baseRule": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "base" },
+        "minMph": { "type": ["number", "null"] },
+        "maxMphExclusive": { "type": ["number", "null"] }
+      }
+    },
+    "overlayRule": {
+      "type": "object",
+      "required": ["type", "minMph", "groupId"],
+      "properties": {
+        "type": { "const": "overlay" },
+        "minMph": { "type": "number" },
+        "maxMphExclusive": { "type": ["number", "null"] },
+        "groupId": { "type": "string", "minLength": 1 },
+        "groupName": { "type": "string" },
+        "durationMs": { "type": "integer", "minimum": 1, "default": 20000 },
+        "cooldownMinMs": { "type": "integer", "minimum": 0, "default": 20000 },
+        "cooldownMaxMs": { "type": "integer", "minimum": 0, "default": 40000 },
+        "weight": { "type": "integer", "minimum": 1, "default": 1 }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["condition", "modifiers"],
+      "properties": {
+        "eventId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "condition": { "$ref": "#/$defs/condition" },
+        "modifiers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/modifier" }
+        }
+      }
+    },
+    "condition": {
+      "oneOf": [
+        { "$ref": "#/$defs/allCondition" },
+        { "$ref": "#/$defs/anyCondition" },
+        { "$ref": "#/$defs/mphCondition" }
+      ]
+    },
+    "allCondition": {
+      "type": "object",
+      "required": ["all"],
+      "properties": {
+        "all": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/condition" }
+        }
+      }
+    },
+    "anyCondition": {
+      "type": "object",
+      "required": ["any"],
+      "properties": {
+        "any": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/condition" }
+        }
+      }
+    },
+    "mphCondition": {
+      "type": "object",
+      "required": ["operator", "value"],
+      "properties": {
+        "metric": { "const": "mph", "default": "mph" },
+        "operator": {
+          "enum": ["gt", ">", "gte", ">=", "lt", "<", "lte", "<=", "eq", "==", "neq", "!="]
+        },
+        "value": { "type": "number" }
+      }
+    },
+    "modifier": {
+      "oneOf": [
+        { "$ref": "#/$defs/gainMultiplierModifier" },
+        { "$ref": "#/$defs/reverbModifier" }
+      ]
+    },
+    "gainMultiplierModifier": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "gainMultiplier" },
+        "multiplier": { "type": "number", "minimum": 0, "default": 1.0 },
+        "fadeMs": { "type": "integer", "minimum": 0, "default": 1500 }
+      }
+    },
+    "reverbModifier": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "reverb" },
+        "wetMix": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.35 },
+        "feedback": { "type": "number", "minimum": 0, "maximum": 0.98, "default": 0.55 },
+        "damping": { "type": "number", "minimum": 0, "maximum": 0.98, "default": 0.35 },
+        "delayMs": { "type": "number", "minimum": 20, "maximum": 750, "default": 140.0 },
+        "fadeMs": { "type": "integer", "minimum": 0, "default": 1500 }
+      }
+    }
+  }
+}

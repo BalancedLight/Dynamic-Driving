@@ -1,0 +1,17 @@
+{
+  "songId": "fixture_minimal",
+  "displayName": "Minimal Fixture",
+  "transportStemId": "main",
+  "loopRegion": {
+    "startMs": 0,
+    "endMs": 8000
+  },
+  "stems": [
+    {
+      "stemId": "main",
+      "displayName": "Main",
+      "assetPath": "main.wav",
+      "rule": { "type": "base" }
+    }
+  ]
+}

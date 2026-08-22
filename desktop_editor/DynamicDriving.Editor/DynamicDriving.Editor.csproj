@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>DynamicDriving.Editor</RootNamespace>
+    <AssemblyName>DynamicDriving.Editor</AssemblyName>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- The distributable is one self-contained Windows executable. WPF is not trim-safe. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+
+    <StandalonePublishDir>$(MSBuildProjectDirectory)\..\..\artifacts\editor\</StandalonePublishDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ApplicationIcon stamps the exe; Resource is what lets the window itself load the icon. -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynamicDriving.Core\DynamicDriving.Core.csproj" />
+  </ItemGroup>
+
+  <!-- A normal Release build also creates the user-facing single-file artifact. The guard keeps
+       the nested Publish build from invoking this target recursively. -->
+  <Target Name="PublishStandaloneExecutableAfterReleaseBuild"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release' and '$(DesignTimeBuild)' != 'true' and '$(_IsPublishing)' != 'true'">
+    <RemoveDir Directories="$(StandalonePublishDir)" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier);SelfContained=true;PublishSingleFile=true;PublishDir=$(StandalonePublishDir);DebugType=None;DebugSymbols=false;_IsPublishing=true" />
+    <ItemGroup>
+      <_StandaloneArtifacts Include="$(StandalonePublishDir)**\*" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(StandalonePublishDir)DynamicDriving.Editor.exe')"
+           Text="Single-file publish did not produce DynamicDriving.Editor.exe." />
+    <Error Condition="'@(_StandaloneArtifacts->Count())' != '1'"
+           Text="Single-file publish produced @(_StandaloneArtifacts->Count()) artifacts instead of exactly one." />
+  </Target>
+
+</Project>

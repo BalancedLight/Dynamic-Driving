@@ -1,0 +1,206 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Resolve and verify version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The tag is the source of truth, and everything that carries a version must agree with it.
+      # A mismatch here is far cheaper to find than an APK whose versionName lies about its tag.
+      - name: Resolve version and check it against the sources
+        id: resolve
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing version $version"
+
+          fail=0
+          check() {
+            local file="$1" pattern="$2" label="$3"
+            if ! grep -q "$pattern" "$file"; then
+              echo "::error file=$file::$label does not declare version $version"
+              fail=1
+            fi
+          }
+
+          check mobile/build.gradle.kts "versionName = \"$version\"" "mobile versionName"
+          check automotive/build.gradle.kts "versionName = \"$version\"" "automotive versionName"
+          check desktop_editor/Directory.Build.props "<Version>$version</Version>" "editor Version"
+
+          exit $fail
+
+  android:
+    name: Android
+    needs: version
+    uses: ./.github/workflows/android-ci.yml
+    with:
+      run-emulator-tests: true
+      upload-artifacts: true
+
+  editor:
+    name: Desktop editor
+    needs: version
+    uses: ./.github/workflows/desktop-editor-ci.yml
+    with:
+      upload-artifacts: true
+      version: ${{ needs.version.outputs.version }}
+
+  publish:
+    name: Sign, checksum, publish
+    needs: [version, android, editor]
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Publishing has to fail loudly rather than quietly shipping unsigned APKs, so the secrets are
+      # checked before anything is downloaded or built into a release.
+      - name: Require the Android signing secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$ANDROID_KEYSTORE_BASE64" ]   || missing="$missing ANDROID_KEYSTORE_BASE64"
+          [ -n "$ANDROID_KEYSTORE_PASSWORD" ] || missing="$missing ANDROID_KEYSTORE_PASSWORD"
+          [ -n "$ANDROID_KEY_ALIAS" ]         || missing="$missing ANDROID_KEY_ALIAS"
+          [ -n "$ANDROID_KEY_PASSWORD" ]      || missing="$missing ANDROID_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Release signing secrets are not configured:$missing"
+            echo "::error::Add them in the repository settings, then re-run this release."
+            exit 1
+          fi
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download unsigned APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-unsigned-apks
+          path: unsigned
+
+      - name: Download editor ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: editor-zip
+          path: release
+
+      - name: Locate build tools
+        id: buildtools
+        run: |
+          version="$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
+          echo "path=$ANDROID_HOME/build-tools/$version" >> "$GITHUB_OUTPUT"
+          echo "Using build-tools $version"
+
+      - name: Sign the APKs
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          BUILD_TOOLS: ${{ steps.buildtools.outputs.path }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+
+          # The keystore only ever exists on the runner's disk, is never written to the workspace,
+          # and is shredded before the job ends.
+          keystore="$RUNNER_TEMP/release.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+
+          sign() {
+            local module="$1" output="release/DynamicDriving-$module-v$VERSION.apk"
+            local input
+            input="$(find unsigned -name '*.apk' -path "*$module*" | head -n 1)"
+            if [ -z "$input" ]; then
+              echo "::error::No unsigned APK found for $module"
+              exit 1
+            fi
+
+            "$BUILD_TOOLS/zipalign" -p -f 4 "$input" "$output.aligned"
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks "$keystore" \
+              --ks-pass "env:ANDROID_KEYSTORE_PASSWORD" \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --key-pass "env:ANDROID_KEY_PASSWORD" \
+              --out "$output" \
+              "$output.aligned"
+            rm -f "$output.aligned" "$output.idsig"
+          }
+
+          sign mobile
+          sign automotive
+
+          shred -u "$keystore" 2>/dev/null || rm -f "$keystore"
+
+      - name: Verify the signatures
+        env:
+          BUILD_TOOLS: ${{ steps.buildtools.outputs.path }}
+        run: |
+          set -euo pipefail
+          for apk in release/*.apk; do
+            echo "== $apk"
+            "$BUILD_TOOLS/apksigner" verify --print-certs --verbose "$apk"
+          done
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum DynamicDriving-*.apk DynamicDriving-Editor-*.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Dynamic Driving v${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          files: |
+            release/DynamicDriving-mobile-v${{ env.VERSION }}.apk
+            release/DynamicDriving-automotive-v${{ env.VERSION }}.apk
+            release/DynamicDriving-Editor-v${{ env.VERSION }}-win-x64.zip
+            release/SHA256SUMS.txt
+          body: |
+            ## Dynamic Driving v${{ env.VERSION }}
+
+            | Artifact | For |
+            |---|---|
+            | `DynamicDriving-mobile-v${{ env.VERSION }}.apk` | Phone and Android Auto |
+            | `DynamicDriving-automotive-v${{ env.VERSION }}.apk` | Android Automotive OS |
+            | `DynamicDriving-Editor-v${{ env.VERSION }}-win-x64.zip` | Windows song editor, portable |
+
+            ### Verifying your download
+
+            ```
+            sha256sum --check --ignore-missing SHA256SUMS.txt
+            apksigner verify --print-certs --verbose DynamicDriving-mobile-v${{ env.VERSION }}.apk
+            ```
+
+            The APKs are signed. The editor ZIP is unsigned for this release — check its SHA-256
+            before running it. Everything the app reads stays on your device; see `docs/PRIVACY.md`.

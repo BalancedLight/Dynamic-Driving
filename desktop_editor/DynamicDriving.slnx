@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="DynamicDriving.Core/DynamicDriving.Core.csproj" />
+  <Project Path="DynamicDriving.Editor/DynamicDriving.Editor.csproj" />
+  <Project Path="DynamicDriving.Tests/DynamicDriving.Tests.csproj" />
+</Solution>

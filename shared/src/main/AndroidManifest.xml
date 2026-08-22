@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application android:appCategory="audio">
+
+        <!--
+            Media browsing and playback for the app UI, the notification, the lock screen,
+            Android Auto, and AAOS.
+
+            The phone build widens foregroundServiceType to include "location": that is what lets
+            adaptive playback read GPS while the user has playback running, and why the app never
+            needs the background-location permission. AAOS reads the vehicle's own speed and so
+            keeps the narrower media-only type.
+        -->
+        <service
+            android:name="com.BalancedLight.dynamicdriving.shared.MyMusicService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+        <!--
+            Serves downsampled cover-art JPEGs to car hosts, which run out-of-process and cannot
+            read the document-provider URIs granted to this app. It is not exported: the media
+            service grants read access per URI to each browser that actually connects, so no other
+            app can enumerate the user's cover art.
+        -->
+        <provider
+            android:name="com.BalancedLight.dynamicdriving.shared.artwork.SongArtworkProvider"
+            android:authorities="${applicationId}.artwork"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
+    </application>
+
+</manifest>

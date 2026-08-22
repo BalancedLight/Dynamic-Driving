@@ -1,0 +1,40 @@
+# Gradle / Android build outputs
+.gradle/
+**/build/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+
+# .NET build outputs
+[Bb]in/
+[Oo]bj/
+artifacts/
+*.user
+*.suo
+.vs/
+*_wpftmp.csproj
+
+# Local machine configuration
+local.properties
+*.iml
+.idea/
+.vscode/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Logs and crash artifacts
+*.log
+*.hprof
+
+# Packaged Android artifacts
+*.apk
+*.aab
+*.ap_
+
+# Signing keys
+*.keystore
+*.jks

@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- WPF formatting and bindings request Windows cultures such as en-US at runtime. Invariant
+         mode removes that culture data and makes the published editor fail during first layout. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- Every dependency is pinned by a checked-in lock file; CI restores in locked mode. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <Product>Dynamic Driving Editor</Product>
+    <Company>Dynamic Driving</Company>
+    <Copyright>Copyright (c) Dynamic Driving contributors</Copyright>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,475 @@
+<Window x:Class="DynamicDriving.Editor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:DynamicDriving.Editor.Views"
+        xmlns:vm="clr-namespace:DynamicDriving.Editor.ViewModels"
+        Title="{Binding WindowTitle}"
+        Height="820"
+        Width="1440"
+        MinHeight="620"
+        MinWidth="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13"
+        Icon="pack://application:,,,/DynamicDriving.Editor;component/Assets/app.ico">
+
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenFolderCommand}" />
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NewSongCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="{Binding SaveCopyCommand}" />
+        <KeyBinding Key="Space" Command="{Binding TogglePlaybackCommand}" />
+    </Window.InputBindings>
+
+    <DockPanel>
+
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="10,8">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="New song" Command="{Binding NewSongCommand}" />
+                <Button Content="Open folder" Command="{Binding OpenFolderCommand}" />
+                <Button Content="Reload" Command="{Binding ReloadFolderCommand}" />
+                <Button Content="Save" Command="{Binding SaveCommand}" />
+                <Button Content="Save a copy" Command="{Binding SaveCopyCommand}" MinWidth="92" />
+                <Separator Margin="8,0" />
+                <Button Content="Rescan stems" Command="{Binding RescanStemsCommand}" MinWidth="100" />
+                <TextBlock Text="{Binding FolderPath}"
+                           Margin="16,0,0,0"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Border>
+
+        <!-- Status bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="10,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1"
+                           Foreground="{StaticResource MutedTextBrush}">
+                    <Run Text="Loops:" />
+                    <Run Text="{Binding LoopCount, Mode=OneWay}" />
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" MinWidth="220" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" MinWidth="420" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="400" MinWidth="330" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============================ Pane 1: browser ============================ -->
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="SONG" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+
+                <Border DockPanel.Dock="Top"
+                        Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        Padding="8"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Artist}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Album}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <Image Source="{Binding CoverPath, TargetNullValue={x:Null}}"
+                               Height="140"
+                               Margin="0,8,0,0"
+                               Stretch="UniformToFill" />
+                        <Button Content="Set cover art…"
+                                Command="{Binding ImportCoverCommand}"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock DockPanel.Dock="Top" Text="STEMS" Style="{StaticResource SectionHeader}" />
+
+                <ListBox ItemsSource="{Binding Stems}"
+                         SelectedItem="{Binding SelectedStem}"
+                         HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:StemViewModel}">
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Button Content="{Binding PreviewActionLabel}"
+                                        MinWidth="70"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.ToggleStemPreviewCommand,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="Mute affects preview only; muted stems remain in the saved song" />
+
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding AssetPath}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding LiveEvents}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+
+                                <!-- Live level while previewing, so speed rules can be heard and seen. -->
+                                <ProgressBar Grid.Column="2"
+                                             Width="52"
+                                             Height="8"
+                                             Minimum="0"
+                                             Maximum="1"
+                                             Value="{Binding LiveGain, Mode=OneWay}"
+                                             Foreground="{StaticResource AccentBrush}"
+                                             Background="{StaticResource PanelAltBrush}"
+                                             BorderThickness="0"
+                                             VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Stretch"
+                          Background="Transparent" />
+
+            <!-- ============================ Pane 2: waveform and transport ============================ -->
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top" Text="WAVEFORM" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+
+                <Border DockPanel.Dock="Top"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        Height="220">
+                    <views:WaveformControl x:Name="Waveform"
+                                           Background="{StaticResource PanelBrush}"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           WaveformBrush="{StaticResource WaveformBrush}"
+                                           AccentBrush="{StaticResource AccentBrush}"
+                                           Waveform="{Binding Waveform}"
+                                           PositionMs="{Binding PositionMs}"
+                                           LoopStartMs="{Binding LoopStartMs}"
+                                           LoopEndMs="{Binding LoopEndMs}" />
+                </Border>
+
+                <Border DockPanel.Dock="Top"
+                        Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1,0,1,1"
+                        Padding="10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Play / Pause" Command="{Binding TogglePlaybackCommand}" MinWidth="100" />
+                            <Button Content="Stop" Command="{Binding StopPlaybackCommand}" />
+                            <Button Content="Play tail" Command="{Binding PlayTailCommand}" MinWidth="84"
+                                    ToolTip="Play the audio after the loop end, the way the app does when moving on" />
+                            <TextBlock Margin="16,0,0,0" Foreground="{StaticResource MutedTextBrush}">
+                                <Run Text="{Binding PositionMs, Mode=OneWay, StringFormat={}{0:F0} ms}" />
+                                <Run Text=" / " />
+                                <Run Text="{Binding TotalMs, Mode=OneWay, StringFormat={}{0:F0} ms}" />
+                            </TextBlock>
+                        </StackPanel>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="Loop start (ms)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Grid.Column="1" Text="{Binding LoopStartMs, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Column="2" Text="Loop end (ms)" Style="{StaticResource FieldLabel}"
+                                       Margin="12,0,8,0" />
+                            <TextBox Grid.Column="3" Text="{Binding LoopEndMs, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="4" Content="Apply" Command="{Binding ApplyLoopEditsCommand}"
+                                    Margin="12,0,6,0" />
+                            <CheckBox Grid.Column="5" Content="Tail over loop" IsChecked="{Binding PlayTailOverLoop}"
+                                      Margin="8,0" />
+                            <CheckBox Grid.Column="6" Content="Loop starts song" IsChecked="{Binding LoopStartsSong}"
+                                      Margin="8,0" />
+                        </Grid>
+
+                        <TextBlock Text="SPEED SIMULATION" Style="{StaticResource SectionHeader}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="120" Value="{Binding SpeedMph}"
+                                    TickFrequency="10" IsSnapToTickEnabled="False" />
+                            <TextBlock Grid.Column="1" Margin="10,0,0,0" MinWidth="70"
+                                       Text="{Binding SpeedMph, StringFormat={}{0:F0} mph}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding SpeedPresets}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding StringFormat={}{0:F0}}"
+                                            MinWidth="44"
+                                            Command="{Binding DataContext.SetSpeedCommand,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock DockPanel.Dock="Top" Text="VALIDATION" Style="{StaticResource SectionHeader}" />
+                <ListBox ItemsSource="{Binding Issues}" HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <TextBlock Text="{Binding Severity}"
+                                           MinWidth="64"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource ErrorBrush}" />
+                                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="3" Width="6" HorizontalAlignment="Stretch"
+                          Background="Transparent" />
+
+            <!-- ============================ Pane 3: inspector ============================ -->
+            <ScrollViewer Grid.Column="4" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,6,0">
+
+                    <TextBlock Text="SONG DETAILS" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+                    <TextBlock Text="Song ID" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding SongId, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Artist (leave blank if unknown)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Album (leave blank if unknown)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding Album, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="Transport stem ID" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding TransportStemId, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="SONG MUFFLE" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Muffle the whole song at low speed" IsChecked="{Binding MuffleEnabled}" />
+                    <StackPanel IsEnabled="{Binding MuffleEnabled}">
+                        <TextBlock Text="Release speed (mph)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding MuffleReleaseMph, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Wet mix (0–1)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding MuffleWetMix, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Cutoff (Hz)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding MuffleCutoffHz, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Fade (ms)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding MuffleFadeMs, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <ContentControl Content="{Binding SelectedStem}">
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate DataType="{x:Type vm:StemViewModel}">
+                                <StackPanel>
+                                    <TextBlock Text="SELECTED STEM" Style="{StaticResource SectionHeader}" />
+                                    <TextBlock Text="Stem ID" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding StemId, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Asset path" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding AssetPath, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Gain" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Fade in (ms)" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding FadeInMs, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Fade out (ms)" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding FadeOutMs, UpdateSourceTrigger=PropertyChanged}" />
+                                    <CheckBox Content="Ring out over the restarted loop"
+                                              IsChecked="{Binding PlayTailOverLoop}" />
+
+                                    <TextBlock Text="RULE" Style="{StaticResource SectionHeader}" />
+                                    <CheckBox Content="Overlay stem (timed, grouped, with cooldown)"
+                                              IsChecked="{Binding IsOverlay}" />
+                                    <TextBlock Text="Minimum mph (blank = no lower bound)"
+                                               Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding MinMph, UpdateSourceTrigger=PropertyChanged,
+                                                            TargetNullValue=''}" />
+                                    <TextBlock Text="Maximum mph, exclusive (blank = no upper bound)"
+                                               Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding MaxMphExclusive, UpdateSourceTrigger=PropertyChanged,
+                                                            TargetNullValue=''}" />
+
+                                    <StackPanel IsEnabled="{Binding IsOverlay}">
+                                        <TextBlock Text="Overlay group ID" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding GroupId, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="Overlay group name" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged,
+                                                                TargetNullValue=''}" />
+                                        <TextBlock Text="Active duration (ms)" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding DurationMs, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="Cooldown min (ms)" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding CooldownMinMs, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="Cooldown max (ms)" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding CooldownMaxMs, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="Weight" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding Weight, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                    </ContentControl>
+
+                    <TextBlock Text="EVENTS" Style="{StaticResource SectionHeader}" />
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Add event" Command="{Binding AddEventCommand}" MinWidth="90" />
+                        <Button Content="Remove" Command="{Binding RemoveEventCommand}"
+                                CommandParameter="{Binding SelectedEvent}" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding SelectedStem.Events}"
+                             SelectedItem="{Binding SelectedEvent}"
+                             MaxHeight="120"
+                             Margin="0,6">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:StemEventViewModel}">
+                                <TextBlock Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <ContentControl Content="{Binding SelectedEvent}">
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate DataType="{x:Type vm:StemEventViewModel}">
+                                <StackPanel>
+                                    <TextBlock Text="Event ID" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding EventId, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <CheckBox Content="All conditions must hold (otherwise any one will do)"
+                                              IsChecked="{Binding RequiresAllConditions}" />
+
+                                    <TextBlock Text="Conditions" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Add condition"
+                                                MinWidth="106"
+                                                Command="{Binding DataContext.AddConditionCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=Window}}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Conditions}" Margin="0,4">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:MphConditionViewModel}">
+                                                <Grid Margin="0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="70" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="mph" Style="{StaticResource FieldLabel}" />
+                                                    <ComboBox Grid.Column="1"
+                                                              ItemsSource="{x:Static vm:MphConditionViewModel.OperatorTokens}"
+                                                              SelectedItem="{Binding OperatorToken}" />
+                                                    <TextBox Grid.Column="2" Margin="6,2"
+                                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Button Grid.Column="3" Content="✕" MinWidth="28"
+                                                            Command="{Binding DataContext.RemoveConditionCommand,
+                                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="Modifiers" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Add gain"
+                                                Command="{Binding DataContext.AddGainModifierCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        <Button Content="Add reverb"
+                                                Command="{Binding DataContext.AddReverbModifierCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=Window}}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Modifiers}" Margin="0,4,0,16">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:StemModifierViewModel}">
+                                                <Border BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1"
+                                                        Padding="6"
+                                                        Margin="0,3">
+                                                    <StackPanel>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Summary}" />
+                                                            <Button Grid.Column="1" Content="✕" MinWidth="28"
+                                                                    Command="{Binding DataContext.RemoveModifierCommand,
+                                                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}" />
+                                                        </Grid>
+
+                                                        <StackPanel Visibility="{Binding IsReverb,
+                                                                                         Converter={StaticResource InverseBooleanToVisibility}}">
+                                                            <TextBlock Text="Multiplier (0+; 1 = unchanged)"
+                                                                       Style="{StaticResource FieldLabel}" />
+                                                            <TextBox Text="{Binding MultiplierText,
+                                                                                    UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+
+                                                        <StackPanel Visibility="{Binding IsReverb,
+                                                                                         Converter={StaticResource BooleanToVisibility}}">
+                                                            <TextBlock Text="Wet mix" Style="{StaticResource FieldLabel}" />
+                                                            <TextBox Text="{Binding WetMix, UpdateSourceTrigger=PropertyChanged}" />
+                                                            <TextBlock Text="Feedback" Style="{StaticResource FieldLabel}" />
+                                                            <TextBox Text="{Binding Feedback, UpdateSourceTrigger=PropertyChanged}" />
+                                                            <TextBlock Text="Damping" Style="{StaticResource FieldLabel}" />
+                                                            <TextBox Text="{Binding Damping, UpdateSourceTrigger=PropertyChanged}" />
+                                                            <TextBlock Text="Delay (ms)" Style="{StaticResource FieldLabel}" />
+                                                            <TextBox Text="{Binding DelayMs, UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+
+                                                        <TextBlock Text="Fade (ms)" Style="{StaticResource FieldLabel}" />
+                                                        <TextBox Text="{Binding FadeMs, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                    </ContentControl>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</Window>

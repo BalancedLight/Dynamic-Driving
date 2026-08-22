@@ -1,0 +1,48 @@
+{
+  "songId": "fixture_metadata",
+  "displayName": "Metadata Fixture",
+  "artist": "Contract Test Artist",
+  "album": "Contract Test Album",
+  "transportStemId": "bed",
+  "loopRegion": {
+    "startMs": 1500,
+    "endMs": 25500,
+    "playTailOverLoop": true,
+    "loopStartsSong": false
+  },
+  "muffle": {
+    "releaseMph": 9.5,
+    "wetMix": 0.72,
+    "cutoffHz": 420.0,
+    "fadeMs": 900
+  },
+  "stems": [
+    {
+      "stemId": "bed",
+      "displayName": "Bed",
+      "assetPath": "bed.wav",
+      "gain": 0.9,
+      "fadeInMs": 1200,
+      "fadeOutMs": 2000,
+      "rule": { "type": "base", "minMph": 0.0, "maxMphExclusive": 90.0 }
+    },
+    {
+      "stemId": "lift",
+      "displayName": "Lift",
+      "assetPath": "layers/lift.wav",
+      "playTailOverLoop": false,
+      "gain": 0.75,
+      "rule": {
+        "type": "overlay",
+        "minMph": 25.0,
+        "maxMphExclusive": 80.0,
+        "groupId": "highlights",
+        "groupName": "Highlights",
+        "durationMs": 18000,
+        "cooldownMinMs": 12000,
+        "cooldownMaxMs": 30000,
+        "weight": 3
+      }
+    }
+  ]
+}

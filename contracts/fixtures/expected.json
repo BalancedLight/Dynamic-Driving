@@ -1,0 +1,153 @@
+{
+  "description": "Canonical projection of every fixture in this folder. The Kotlin tests (SongCatalogContractTest) and the C# tests (SongContractTests) both parse the fixtures and assert against these values, so a change to one parser that is not mirrored in the other fails the build.",
+  "fixtures": {
+    "minimal.json": {
+      "songId": "fixture_minimal",
+      "displayName": "Minimal Fixture",
+      "artist": null,
+      "album": null,
+      "transportStemId": "main",
+      "loop": {
+        "startMs": 0,
+        "endMs": 8000,
+        "playTailOverLoop": false,
+        "loopStartsSong": true
+      },
+      "muffle": null,
+      "stems": [
+        {
+          "stemId": "main",
+          "displayName": "Main",
+          "assetPath": "main.wav",
+          "playTailOverLoop": true,
+          "gain": 1.0,
+          "fadeInMs": 1500,
+          "fadeOutMs": 1500,
+          "ruleType": "base",
+          "minMph": null,
+          "maxMphExclusive": null,
+          "groupId": null,
+          "eventCount": 0
+        }
+      ]
+    },
+    "metadata.json": {
+      "songId": "fixture_metadata",
+      "displayName": "Metadata Fixture",
+      "artist": "Contract Test Artist",
+      "album": "Contract Test Album",
+      "transportStemId": "bed",
+      "loop": {
+        "startMs": 1500,
+        "endMs": 25500,
+        "playTailOverLoop": true,
+        "loopStartsSong": false
+      },
+      "muffle": {
+        "releaseMph": 9.5,
+        "wetMix": 0.72,
+        "cutoffHz": 420.0,
+        "fadeMs": 900
+      },
+      "stems": [
+        {
+          "stemId": "bed",
+          "displayName": "Bed",
+          "assetPath": "bed.wav",
+          "playTailOverLoop": true,
+          "gain": 0.9,
+          "fadeInMs": 1200,
+          "fadeOutMs": 2000,
+          "ruleType": "base",
+          "minMph": 0.0,
+          "maxMphExclusive": 90.0,
+          "groupId": null,
+          "eventCount": 0
+        },
+        {
+          "stemId": "lift",
+          "displayName": "Lift",
+          "assetPath": "layers/lift.wav",
+          "playTailOverLoop": false,
+          "gain": 0.75,
+          "fadeInMs": 1500,
+          "fadeOutMs": 1500,
+          "ruleType": "overlay",
+          "minMph": 25.0,
+          "maxMphExclusive": 80.0,
+          "groupId": "highlights",
+          "eventCount": 0
+        }
+      ]
+    },
+    "events.json": {
+      "songId": "fixture_events",
+      "displayName": "Events Fixture",
+      "artist": "Contract Test Artist",
+      "album": null,
+      "transportStemId": "core",
+      "loop": {
+        "startMs": 500,
+        "endMs": 12500,
+        "playTailOverLoop": false,
+        "loopStartsSong": true
+      },
+      "muffle": null,
+      "stems": [
+        {
+          "stemId": "core",
+          "displayName": "Core",
+          "assetPath": "core.wav",
+          "playTailOverLoop": true,
+          "gain": 1.0,
+          "fadeInMs": 1500,
+          "fadeOutMs": 1500,
+          "ruleType": "base",
+          "minMph": 5.0,
+          "maxMphExclusive": null,
+          "groupId": null,
+          "eventCount": 2
+        }
+      ]
+    },
+    "unknown-properties.json": {
+      "songId": "fixture_unknown_properties",
+      "displayName": "Unknown Properties Fixture",
+      "artist": null,
+      "album": "Contract Test Album",
+      "transportStemId": "solo",
+      "loop": {
+        "startMs": 0,
+        "endMs": 6000,
+        "playTailOverLoop": false,
+        "loopStartsSong": true
+      },
+      "muffle": null,
+      "stems": [
+        {
+          "stemId": "solo",
+          "displayName": "Solo",
+          "assetPath": "solo.wav",
+          "playTailOverLoop": true,
+          "gain": 1.0,
+          "fadeInMs": 1500,
+          "fadeOutMs": 1500,
+          "ruleType": "base",
+          "minMph": null,
+          "maxMphExclusive": null,
+          "groupId": null,
+          "eventCount": 0
+        }
+      ]
+    }
+  },
+  "preservedUnknownProperties": {
+    "unknown-properties.json": {
+      "song": ["futureTopLevelField"],
+      "loopRegion": ["futureLoopField"],
+      "stems": {
+        "solo": ["futureStemField"]
+      }
+    }
+  }
+}

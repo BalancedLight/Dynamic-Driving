@@ -1,0 +1,21 @@
+{
+  "songId": "fixture_unknown_properties",
+  "displayName": "Unknown Properties Fixture",
+  "album": "Contract Test Album",
+  "transportStemId": "solo",
+  "futureTopLevelField": { "reserved": true, "notes": ["kept verbatim"] },
+  "loopRegion": {
+    "startMs": 0,
+    "endMs": 6000,
+    "futureLoopField": 42
+  },
+  "stems": [
+    {
+      "stemId": "solo",
+      "displayName": "Solo",
+      "assetPath": "solo.wav",
+      "futureStemField": "kept verbatim",
+      "rule": { "type": "base", "futureRuleField": 1.5 }
+    }
+  ]
+}

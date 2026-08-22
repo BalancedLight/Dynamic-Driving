@@ -1,0 +1,107 @@
+name: Desktop editor CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
+  pull_request:
+    paths-ignore: ['docs/**', '**/*.md']
+  workflow_call:
+    inputs:
+      upload-artifacts:
+        description: Upload the portable editor ZIP for a later job to publish.
+        type: boolean
+        default: false
+      version:
+        description: Version string used in the ZIP file name.
+        type: string
+        default: dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editor-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  build:
+    name: Build, test, publish, smoke test
+    runs-on: windows-latest
+
+    env:
+      SOLUTION: desktop_editor/DynamicDriving.slnx
+      PUBLISH_DIR: artifacts/editor
+      ZIP_NAME: DynamicDriving-Editor-v${{ inputs.version || 'dev' }}-win-x64.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # --locked-mode fails rather than silently resolving a package version that is not in the
+      # checked-in lock files.
+      - name: Restore (locked)
+        run: dotnet restore $env:SOLUTION --locked-mode
+
+      - name: Build
+        run: dotnet build $env:SOLUTION -c Release --no-restore
+
+      - name: Test
+        run: dotnet test $env:SOLUTION -c Release --no-build --logger "trx;LogFileName=editor-tests.trx"
+
+      # The Release build above automatically publishes the app. Keep this assertion separate so
+      # a packaging regression cannot silently turn the release back into a loose DLL directory.
+      - name: Verify single-file editor
+        run: |
+          $files = @(Get-ChildItem -LiteralPath $env:PUBLISH_DIR -File -Recurse)
+          if ($files.Count -ne 1) {
+            throw "Expected exactly one published file, found $($files.Count): $($files.FullName -join ', ')"
+          }
+          if ($files[0].Name -ne 'DynamicDriving.Editor.exe') {
+            throw "The only published file is $($files[0].Name), not DynamicDriving.Editor.exe."
+          }
+
+      - name: Package portable ZIP
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Compress-Archive -Path "$env:PUBLISH_DIR/DynamicDriving.Editor.exe" -DestinationPath "artifacts/$env:ZIP_NAME" -Force
+
+      # Unzips somewhere else entirely and runs the app's own acceptance check against the bundled
+      # demo: open the song, preview it, edit it, save a copy, reopen the copy.
+      - name: Smoke test the ZIP
+        run: |
+          $extracted = Join-Path $env:RUNNER_TEMP 'editor-zip-smoke'
+          Remove-Item -Recurse -Force $extracted -ErrorAction SilentlyContinue
+          Expand-Archive -Path "artifacts/$env:ZIP_NAME" -DestinationPath $extracted
+          $exe = Join-Path $extracted 'DynamicDriving.Editor.exe'
+          if (-not (Test-Path $exe)) { throw "DynamicDriving.Editor.exe is missing from the ZIP." }
+
+          $song = Join-Path $PWD 'shared/src/main/assets/songs/open_road'
+          & $exe --self-check $song
+          if ($LASTEXITCODE -ne 0) { throw "The editor self-check failed with exit code $LASTEXITCODE." }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload portable ZIP
+        if: inputs.upload-artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-zip
+          path: artifacts/${{ env.ZIP_NAME }}
+          if-no-files-found: error
+          retention-days: 1
