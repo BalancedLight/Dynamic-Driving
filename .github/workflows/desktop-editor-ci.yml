@@ -85,8 +85,31 @@ jobs:
           if (-not (Test-Path $exe)) { throw "DynamicDriving.Editor.exe is missing from the ZIP." }
 
           $song = Join-Path $PWD 'shared/src/main/assets/songs/open_road'
-          & $exe --self-check $song
-          if ($LASTEXITCODE -ne 0) { throw "The editor self-check failed with exit code $LASTEXITCODE." }
+          # PowerShell does not wait for a WinExe invoked with &, so $LASTEXITCODE can still be
+          # empty while the self-check is running. Own the process handle and wait explicitly.
+          $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+          $startInfo.FileName = $exe
+          $startInfo.UseShellExecute = $false
+          $startInfo.ArgumentList.Add('--self-check')
+          $startInfo.ArgumentList.Add($song)
+
+          $process = [System.Diagnostics.Process]::Start($startInfo)
+          if ($null -eq $process) { throw 'The editor self-check process could not be started.' }
+
+          try {
+            if (-not $process.WaitForExit(120000)) {
+              $process.Kill($true)
+              $process.WaitForExit()
+              throw 'The editor self-check timed out after 120 seconds.'
+            }
+
+            $exitCode = $process.ExitCode
+          }
+          finally {
+            $process.Dispose()
+          }
+
+          if ($exitCode -ne 0) { throw "The editor self-check failed with exit code $exitCode." }
 
       - name: Upload test results
         if: always()

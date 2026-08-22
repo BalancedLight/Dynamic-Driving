@@ -32,6 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Some source archives and Windows checkouts do not preserve Unix executable bits. Make the
+      # wrapper runnable explicitly so every Linux CI entry point behaves the same way.
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -86,6 +91,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
