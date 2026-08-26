@@ -21,8 +21,10 @@ class SpeedSourceRouterTest {
         fixture.router.setSelection(SpeedSourceSelection.AUTOMATIC)
         fixture.router.start()
 
-        awaitValue { fixture.router.effectiveState.value.resolvedSource == ResolvedSpeedSource.CAR_NATIVE }
-        assertEquals(42.0, fixture.router.effectiveState.value.mph, 0.001)
+        val state = awaitState(fixture.router) {
+            it.resolvedSource == ResolvedSpeedSource.CAR_NATIVE && it.mph == 42.0
+        }
+        assertEquals(42.0, state.mph, 0.001)
     }
 
     @Test
@@ -35,13 +37,17 @@ class SpeedSourceRouterTest {
         fixture.router.setForegroundMonitoringActive(true)
         fixture.router.start()
 
-        awaitValue { fixture.router.effectiveState.value.resolvedSource == ResolvedSpeedSource.CAR_PROJECTED }
-        assertEquals(58.0, fixture.router.effectiveState.value.mph, 0.001)
+        val projectedState = awaitState(fixture.router) {
+            it.resolvedSource == ResolvedSpeedSource.CAR_PROJECTED && it.mph == 58.0
+        }
+        assertEquals(58.0, projectedState.mph, 0.001)
 
         fixture.projection.emitUnavailable("Projected car speed unavailable")
 
-        awaitValue { fixture.router.effectiveState.value.resolvedSource == ResolvedSpeedSource.PHONE_GPS }
-        assertEquals(31.0, fixture.router.effectiveState.value.mph, 0.001)
+        val gpsState = awaitState(fixture.router) {
+            it.resolvedSource == ResolvedSpeedSource.PHONE_GPS && it.mph == 31.0
+        }
+        assertEquals(31.0, gpsState.mph, 0.001)
     }
 
     @Test
@@ -208,6 +214,22 @@ class SpeedSourceRouterTest {
             Thread.sleep(10L)
         }
         throw AssertionError("Timed out waiting for expected value.")
+    }
+
+    private fun awaitState(
+        router: SpeedSourceRouter,
+        timeoutMs: Long = 3_000L,
+        condition: (EffectiveSpeedState) -> Boolean
+    ): EffectiveSpeedState {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val state = router.effectiveState.value
+            if (condition(state)) {
+                return state
+            }
+            Thread.sleep(10L)
+        }
+        throw AssertionError("Timed out waiting for expected speed state.")
     }
 
     private class MutableConnectionProvider(
