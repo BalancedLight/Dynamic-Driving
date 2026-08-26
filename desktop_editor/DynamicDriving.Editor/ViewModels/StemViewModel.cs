@@ -85,7 +85,7 @@ public partial class StemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isMuted;
 
-    public string PreviewActionLabel => !Included ? "Add stem" : IsMuted ? "Unmute" : "Mute";
+    public string MuteButtonLabel => IsMuted ? "Unmute" : "Mute";
 
     [ObservableProperty]
     private bool _playTailOverLoop;
@@ -188,21 +188,20 @@ public partial class StemViewModel : ObservableObject
     private void OnOwnPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName is nameof(LiveGain) or nameof(LiveEligible) or nameof(LiveEvents) or nameof(Label)
-            or nameof(PreviewActionLabel))
+            or nameof(MuteButtonLabel))
         {
             return;
         }
 
         if (args.PropertyName == nameof(IsMuted))
         {
-            OnPropertyChanged(nameof(PreviewActionLabel));
+            OnPropertyChanged(nameof(MuteButtonLabel));
             PreviewMuteChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
 
         if (args.PropertyName == nameof(Included))
         {
-            OnPropertyChanged(nameof(PreviewActionLabel));
             InclusionChanged?.Invoke(this, EventArgs.Empty);
         }
 

@@ -116,13 +116,20 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <Button Content="{Binding PreviewActionLabel}"
-                                        MinWidth="70"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding DataContext.ToggleStemPreviewCommand,
-                                                          RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"
-                                        ToolTip="Mute affects preview only; muted stems remain in the saved song" />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox IsChecked="{Binding Included}"
+                                              VerticalAlignment="Center"
+                                              ToolTip="Include this stem in the preview and saved song" />
+                                    <Button Content="{Binding MuteButtonLabel}"
+                                            MinWidth="50"
+                                            Padding="6,2"
+                                            Margin="6,0,0,0"
+                                            IsEnabled="{Binding Included}"
+                                            Command="{Binding DataContext.ToggleStemPreviewCommand,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Mute affects preview only; muted stems remain in the saved song" />
+                                </StackPanel>
 
                                 <StackPanel Grid.Column="1" Margin="8,0">
                                     <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
@@ -318,7 +325,7 @@
                                     <TextBlock Text="RULE" Style="{StaticResource SectionHeader}" />
                                     <CheckBox Content="Overlay stem (timed, grouped, with cooldown)"
                                               IsChecked="{Binding IsOverlay}" />
-                                    <TextBlock Text="Minimum mph (blank = no lower bound)"
+                                    <TextBlock Text="Minimum mph (blank = active even at 0 mph)"
                                                Style="{StaticResource FieldLabel}" />
                                     <TextBox Text="{Binding MinMph, UpdateSourceTrigger=PropertyChanged,
                                                             TargetNullValue=''}" />

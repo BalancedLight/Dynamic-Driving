@@ -326,14 +326,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (!stem.Included)
+        if (stem.Included)
         {
-            stem.Included = true;
-            stem.IsMuted = false;
-            return;
+            stem.IsMuted = !stem.IsMuted;
         }
-
-        stem.IsMuted = !stem.IsMuted;
     }
 
     [RelayCommand]
